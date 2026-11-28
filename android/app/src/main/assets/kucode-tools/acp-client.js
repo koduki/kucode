@@ -261,7 +261,7 @@ class AcpSessionClient extends EventEmitter {
     this.writeOpenEditorText = options.writeOpenEditorText || null;
     this.initTimeoutMs = options.initTimeoutMs || DEFAULT_INIT_TIMEOUT_MS;
     this.requestTimeoutMs = options.requestTimeoutMs || DEFAULT_REQUEST_TIMEOUT_MS;
-    this.clientVersion = options.clientVersion || '0.10.0';
+    this.clientVersion = options.clientVersion || '0.10.1';
 
     this.proc = null;
     this.connected = false;

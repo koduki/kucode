@@ -92,7 +92,7 @@ class AcpChatViewProvider {
     this.reportHostEvent = (options && options.reportHostEvent) || (() => {});
     this.reportHostSpan = (options && options.reportHostSpan) || null;
     this.writeHostClipboard = (options && options.writeHostClipboard) || null;
-    this.extensionVersion = (options && options.extensionVersion) || '0.10.0';
+    this.extensionVersion = (options && options.extensionVersion) || '0.10.1';
     this.webviewView = null;
     this.client = null;
     this.activeAgentId = 'antigravity';

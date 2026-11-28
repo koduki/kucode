@@ -11,7 +11,7 @@ import java.io.File
  */
 object PosixRuntimeConfig {
 
-    const val RUNTIME_VERSION = "0.10.0-debian12-openvscode-1.109.5"
+    const val RUNTIME_VERSION = "0.10.1-debian12-openvscode-1.109.5"
     const val ASSET_ROOTFS = "runtime/debian-arm64-rootfs.tgz"
     const val ASSET_OPENVSCODE = "runtime/openvscode-server-linux-arm64.tgz"
 
@@ -805,48 +805,83 @@ object PosixRuntimeConfig {
         result["kucode-install-agy"] = """
             #!/usr/bin/env bash
             set -euo pipefail
-            export PATH="${'$'}HOME/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            export PATH="${'$'}HOME/.local/bin:${'$'}{PATH:+${'$'}{PATH}:}/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
             echo "[kucode] Setting up official Google Antigravity CLI (agy) for ACP chat & terminal..."
-            if ! command -v curl >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1; then
-              echo "[kucode] Installing curl & git via apt..."
+            if ! command -v curl >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1 || ! command -v tar >/dev/null 2>&1 || ! command -v gzip >/dev/null 2>&1 || ! command -v sha512sum >/dev/null 2>&1; then
+              echo "[kucode] Installing required packages (curl, git, tar, gzip, coreutils) via apt..."
               apt-get update
-              DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates curl git
+              DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates curl git tar gzip coreutils
             fi
-            mkdir -p "${'$'}HOME/.local/bin"
-            curl -fsSL https://antigravity.google/cli/install.sh | bash -s -- --skip-path
-            BIN="${'$'}HOME/.local/bin/agy"
-            if [ ! -x "${'$'}BIN" ]; then
-              FOUND="$(command -v agy 2>/dev/null || true)"
-              if [ -n "${'$'}FOUND" ] && [ -x "${'$'}FOUND" ]; then
-                ln -sf "${'$'}FOUND" "${'$'}BIN"
-              else
-                echo "[kucode] ERROR: agy binary not found at ${'$'}BIN" >&2
-                exit 1
+            STAGE_DIR="$(mktemp -d "${'$'}{TMPDIR:-/tmp}/kucode-agy-install.XXXXXX")"
+            TMP_TARGET=""
+            TMP_REAL=""
+            TMP_WRAP=""
+            cleanup() {
+              if [ -n "${'$'}{STAGE_DIR:-}" ]; then
+                rm -rf "${'$'}STAGE_DIR"
               fi
+              if [ -n "${'$'}{TMP_TARGET:-}" ]; then
+                rm -f "${'$'}TMP_TARGET"
+              fi
+              if [ -n "${'$'}{TMP_REAL:-}" ]; then
+                rm -f "${'$'}TMP_REAL"
+              fi
+              if [ -n "${'$'}{TMP_WRAP:-}" ]; then
+                rm -f "${'$'}TMP_WRAP"
+              fi
+            }
+            trap cleanup EXIT
+            mkdir -p "${'$'}HOME/.local/bin" "${'$'}STAGE_DIR/home" "${'$'}STAGE_DIR/bin"
+            curl -fsSL https://antigravity.google/cli/install.sh | HOME="${'$'}STAGE_DIR/home" bash -s -- -d "${'$'}STAGE_DIR/bin"
+            STAGED_BIN="${'$'}STAGE_DIR/bin/agy"
+            BIN="${'$'}HOME/.local/bin/agy"
+            REAL_BIN="${'$'}HOME/.local/bin/agy.real"
+            if [ ! -f "${'$'}STAGED_BIN" ] || [ ! -x "${'$'}STAGED_BIN" ]; then
+              echo "[kucode] ERROR: agy binary not found at ${'$'}STAGED_BIN" >&2
+              exit 1
             fi
             set +e
-            PROBE_OUT="$( "${'$'}BIN" --version 2>&1 )"
+            PROBE_OUT="$( "${'$'}STAGED_BIN" --version 2>&1 )"
             PROBE_RC=${'$'}?
             set -e
-            if [ "${'$'}PROBE_RC" -ne 0 ]; then
-              if [ -x /lib/ld-linux-aarch64.so.1 ] && /lib/ld-linux-aarch64.so.1 "${'$'}BIN" --version >/dev/null 2>&1; then
-                echo "[kucode] Applying ld-linux-aarch64.so.1 exec wrapper for kernel compatibility..."
-                mv "${'$'}BIN" "${'$'}HOME/.local/bin/agy.real"
-                cat > "${'$'}BIN" <<'WRAP'
+            if [ "${'$'}PROBE_RC" -eq 0 ]; then
+              TMP_TARGET="$(mktemp "${'$'}HOME/.local/bin/.agy.tmp.XXXXXX")"
+              cp -fL "${'$'}STAGED_BIN" "${'$'}TMP_TARGET"
+              chmod 755 "${'$'}TMP_TARGET"
+              mv -f "${'$'}TMP_TARGET" "${'$'}BIN"
+              TMP_TARGET=""
+              rm -f "${'$'}REAL_BIN"
+            elif [ -x /lib/ld-linux-aarch64.so.1 ] && /lib/ld-linux-aarch64.so.1 "${'$'}STAGED_BIN" --version >/dev/null 2>&1; then
+              echo "[kucode] Applying ld-linux-aarch64.so.1 exec wrapper for kernel compatibility..."
+              TMP_REAL="$(mktemp "${'$'}HOME/.local/bin/.agy.real.tmp.XXXXXX")"
+              cp -fL "${'$'}STAGED_BIN" "${'$'}TMP_REAL"
+              chmod 755 "${'$'}TMP_REAL"
+              TMP_WRAP="$(mktemp "${'$'}HOME/.local/bin/.agy.wrap.tmp.XXXXXX")"
+              cat > "${'$'}TMP_WRAP" <<'WRAP'
             #!/bin/sh
             exec /lib/ld-linux-aarch64.so.1 "${'$'}HOME/.local/bin/agy.real" "${'$'}@"
             WRAP
-                chmod 755 "${'$'}BIN"
-                PROBE_OUT="$( "${'$'}BIN" --version 2>&1 )"
-              elif [ "${'$'}PROBE_RC" -eq 159 ]; then
-                echo "[kucode] ERROR: agy exited with SIGSYS (159) — Android seccomp blocked a syscall (e.g. faccessat2)." >&2
-                echo "[kucode] Output: ${'$'}PROBE_OUT" >&2
-                echo "[kucode] Check logs in ~/.gemini/antigravity-cli/log/acp-*.log or restart with PROOT_NO_SECCOMP." >&2
-                exit 159
-              else
-                echo "[kucode] ERROR: agy --version failed (rc=${'$'}PROBE_RC): ${'$'}PROBE_OUT" >&2
-                exit "${'$'}PROBE_RC"
+              chmod 755 "${'$'}TMP_WRAP"
+              mv -f "${'$'}TMP_REAL" "${'$'}REAL_BIN"
+              TMP_REAL=""
+              mv -f "${'$'}TMP_WRAP" "${'$'}BIN"
+              TMP_WRAP=""
+              set +e
+              PROBE_OUT="$( "${'$'}BIN" --version 2>&1 )"
+              WRAP_RC=${'$'}?
+              set -e
+              if [ "${'$'}WRAP_RC" -ne 0 ]; then
+                echo "[kucode] ERROR: agy --version failed (rc=${'$'}WRAP_RC): ${'$'}PROBE_OUT" >&2
+                exit "${'$'}WRAP_RC"
               fi
+            elif [ "${'$'}PROBE_RC" -eq 159 ]; then
+              echo "[kucode] ERROR: agy exited with SIGSYS (159) — Android seccomp blocked a syscall (e.g. faccessat2)." >&2
+              echo "[kucode] Output: ${'$'}PROBE_OUT" >&2
+              echo "[kucode] Check logs in ~/.gemini/antigravity-cli/log/acp-*.log or restart with PROOT_NO_SECCOMP." >&2
+              exit 159
+            else
+              echo "[kucode] ERROR: agy --version failed (rc=${'$'}PROBE_RC): ${'$'}PROBE_OUT" >&2
+              exit "${'$'}PROBE_RC"
             fi
             echo "[kucode] Installed: ${'$'}PROBE_OUT"
             if "${'$'}BIN" acp --help >/dev/null 2>&1; then

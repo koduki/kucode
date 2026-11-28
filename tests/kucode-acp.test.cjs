@@ -521,7 +521,7 @@ test('AcpChatViewProvider defaults to antigravity, renders strict CSP OST webvie
     Module._load = origLoad;
   }
 
-  const provider = new AcpChatViewProvider({ extensionVersion: '0.10.0' });
+  const provider = new AcpChatViewProvider({ extensionVersion: '0.10.1' });
   t.after(async () => {
     await provider.dispose();
   });
@@ -663,7 +663,7 @@ test('AcpChatViewProvider ignores workspace-scoped ACP overrides and blocks untr
     Module._load = origLoad;
   }
 
-  const provider = new AcpChatViewProvider({ extensionVersion: '0.10.0' });
+  const provider = new AcpChatViewProvider({ extensionVersion: '0.10.1' });
   t.after(async () => { await provider.dispose(); });
   provider.resolveWebviewView({
     webview: {

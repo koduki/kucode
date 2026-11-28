@@ -230,7 +230,7 @@ test('extension.js, acp-client.js, acp-webview.js pass node --check and manifest
 
   const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
   assert.equal(pkg.name, 'kucode-tools');
-  assert.equal(pkg.version, '0.10.0');
+  assert.equal(pkg.version, '0.10.1');
   assert.equal(pkg.main, './extension.js');
   assert.ok(Array.isArray(pkg.contributes.commands) && pkg.contributes.commands.length >= 17);
 
