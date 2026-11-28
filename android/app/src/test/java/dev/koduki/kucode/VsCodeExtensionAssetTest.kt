@@ -38,7 +38,7 @@ class VsCodeExtensionAssetTest {
             assertTrue(extDir.resolve("acp-webview.js").isFile)
             val pkgJson = JSONObject(extDir.resolve("package.json").readText())
             assertEquals("kucode-tools", pkgJson.getString("name"))
-            assertEquals("0.10.0", pkgJson.getString("version"))
+            assertEquals("0.10.1", pkgJson.getString("version"))
             assertEquals("./extension.js", pkgJson.getString("main"))
 
             val contributes = pkgJson.getJSONObject("contributes")

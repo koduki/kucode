@@ -2,7 +2,7 @@
   "name": "kucode-tools",
   "displayName": "KuCode Diagnostics & Tools",
   "description": "Built-in Android XR ACP AI agent chat, diagnostics, clipboard bridge, optical presets, log viewer, and storage menu for KuCode",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "publisher": "koduki",
   "engines": {
     "vscode": "^1.80.0"

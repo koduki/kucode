@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "feature": "agy-installer-fix",
+  "specPath": "docs/specs/agy-installer-fix/spec.md",
+  "deployTarget": "release-tag",
+  "criteria": [
+    {
+      "id": "AC-1",
+      "title": "kucode-install-agy passes bash -n, omits unsupported --skip-path/--skip-aliases flags, keeps official https://antigravity.google/cli/install.sh hardcoded, and succeeds end-to-end against a strict mock install.sh accepting only -d/--dir and -h/--help while cleaning up staging temp dirs",
+      "verificationType": "oracle-node-e2e",
+      "oracleFile": "tests/oracle/agy-installer-fix.oracle.test.cjs",
+      "status": "PASS",
+      "passed": true
+    },
+    {
+      "id": "AC-2",
+      "title": "kucode-install-agy isolates HOME during install.sh execution so post-install agy install cannot mutate real ~/.bashrc, ~/.profile, or ~/.zshrc, and preserves user-first PATH ordering",
+      "verificationType": "oracle-node-e2e",
+      "oracleFile": "tests/oracle/agy-installer-fix.oracle.test.cjs",
+      "status": "PASS",
+      "passed": true
+    },
+    {
+      "id": "AC-3",
+      "title": "kucode-install-agy recovers cleanly from a pre-existing broken/empty ~/.local/bin/agy and upgrades a previously wrapped agy + agy.real installation without double-wrapping or leaving stale agy.real",
+      "verificationType": "oracle-node-e2e",
+      "oracleFile": "tests/oracle/agy-installer-fix.oracle.test.cjs",
+      "status": "PASS",
+      "passed": true
+    },
+    {
+      "id": "AC-4",
+      "title": "kucode-install-agy preserves an existing working ~/.local/bin/agy untouched when download fails or when the staged binary fails --version (including exit code 159 SIGSYS with PROOT_NO_SECCOMP guidance)",
+      "verificationType": "oracle-node-e2e",
+      "oracleFile": "tests/oracle/agy-installer-fix.oracle.test.cjs",
+      "status": "PASS",
+      "passed": true
+    },
+    {
+      "id": "AC-5",
+      "title": "kucode-install-agy retains ld-linux-aarch64.so.1 exec wrapper fallback (installing agy.real + 0755 /bin/sh wrapper with safe re-probe), checks curl/git/tar/gzip/sha512sum prerequisites, and verifies agy acp --help",
+      "verificationType": "oracle-node-e2e",
+      "oracleFile": "tests/oracle/agy-installer-fix.oracle.test.cjs",
+      "status": "PASS",
+      "passed": true
+    },
+    {
+      "id": "AC-6",
+      "title": "Release version metadata is consistently bumped to 0.10.1 (versionCode = 12) across build.gradle.kts, PosixRuntimeConfig.RUNTIME_VERSION, and kucode-tools extension files",
+      "verificationType": "oracle-node-e2e",
+      "oracleFile": "tests/oracle/agy-installer-fix.oracle.test.cjs",
+      "status": "PASS",
+      "passed": true
+    },
+    {
+      "id": "AC-7",
+      "title": "Physical XREAL AURA device executes kucode-install-agy && agy acp --login and connects in ACP chat panel",
+      "verificationType": "physical-device-aura",
+      "oracleFile": null,
+      "status": "NOT RUN",
+      "passed": false
+    }
+  ]
+}

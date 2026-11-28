@@ -740,7 +740,7 @@ function activate(context) {
     reportHostEvent,
     reportHostSpan,
     writeHostClipboard,
-    extensionVersion: '0.10.0',
+    extensionVersion: '0.10.1',
   });
 
   context.subscriptions.push(
